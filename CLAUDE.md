@@ -43,6 +43,39 @@ End-to-end fraud detection system targeting fraud/risk roles at LATAM fintechs (
 6. **Anti-pattern to avoid**: starting many things at 60% completion. Finish before moving on.
 7. **Go cell-by-cell / step-by-step**. The user wants to understand what's happening, not have a wall of code dumped. After writing each meaningful piece of code, pause and let the user run/review it before continuing.
 
+## Working Modes
+
+There are two valid modes for executing tasks. The default is "step-by-step" for this user. Switch only when explicitly asked.
+
+### Default: Step-by-step mode
+For each meaningful unit of work (a function, a notebook cell, a config block, a non-trivial refactor):
+1. Briefly explain WHAT you're about to write and WHY (1-3 sentences).
+2. Write the code for that unit only.
+3. STOP. Wait for the user to confirm before continuing to the next unit.
+4. After the user confirms (or asks for changes), repeat with the next unit.
+
+Do not chain multiple units in one response. Do not auto-run scripts after generating them unless the user explicitly says "go ahead and run it" or equivalent.
+
+This mode is the default because the user is learning the domain and wants to absorb decisions as they're made. Speed is secondary to understanding.
+
+### Build-the-spec mode
+Activate only when the user says something like "build the full module", "go ahead end-to-end", "no need to pause", or similar explicit signal.
+
+In this mode:
+1. Build the full deliverable as specified.
+2. Show the result for review.
+3. Wait for the user to run it themselves and report back.
+
+Even in this mode, never auto-execute scripts that modify files outside the immediate task scope or that take significant time. Always pause before running.
+
+### How to recognize which mode to use
+- If the user's prompt contains phrases like "vamos paso a paso", "celda por celda", "esperá mi confirmación", "no avances sin que te diga" → step-by-step.
+- If the user's prompt is a full spec of a deliverable with definitions, constraints, and entregables listed (like a ticket) → ask once: "¿lo construyo end-to-end o vamos pieza por pieza?". Default to step-by-step if no answer.
+- If the user asks a conceptual question ("¿por qué X?", "¿qué es Y?") → answer first, do not write code until asked.
+
+### Anti-pattern to avoid
+Do NOT generate a large module, immediately run it, show the output, and ask "¿seguimos?". By that point the user has lost the chance to intervene at each decision. Pause earlier.
+
 ## Protected Files
 The following files belong to the user's personal learning process and MUST NOT be edited without explicit permission:
 - `domain_notes.md`: the user writes this in their own words while learning the domain. Editing it would defeat its pedagogical purpose. You may READ it (e.g., as context for the LLM agent in week 4), but never write to it unless the user says "edit domain_notes.md" explicitly.
@@ -93,4 +126,4 @@ If the user mentions an idea that is interesting but out of scope for the 4-week
 - **MDR**: Merchant Discount Rate; what the merchant pays to process a card transaction.
 
 ## Current Phase
-Week 1: Setup complete. Dataset (IEEE-CIS) downloaded and converted to parquet. Currently working on `notebooks/01_eda.ipynb` for initial exploration.
+Week 2: Feature engineering and baseline model. EDA from Week 1 completed and committed (notebooks/01_eda.ipynb). Currently building feature engineering modules in src/features/ (starting with synthetic UIDs for grouping transactions by user proxy, then velocity features and aggregations). After features are ready, will train LightGBM baseline with temporal split, then iterate with class imbalance handling and cost-based threshold tuning.
