@@ -97,7 +97,18 @@ Open questions / Notes:
 Next:
 - bullet list of what to tackle in the next session
 
-Update `PROGRESS.md` PROACTIVELY at session end — do not wait for the user to ask. The user uses these entries to sync state with a separate planning conversation (the project chat in claude.ai).
+## PROGRESS.md Updates — Division of Labor
+
+At the end of each task, PROGRESS.md gets a new entry. Two parties contribute:
+
+**Claude Code writes the `Done:` block.**
+Lists files created/modified, functions added, scripts executed, outputs generated, artifacts saved. Mechanical, factual, code-level detail. Claude Code knows this best because it executed the work.
+
+**The chat (Felipe + Claude) writes `Decisions:`, `Open questions / Notes:`, `Next:`.**
+This is where the *why* lives: criterion behind technical choices, trade-offs considered, caveats, what was deferred to v2_ideas.md, what the next step is and why. Claude Code did not participate in this discussion and cannot reconstruct it reliably.
+
+**Workflow:**
+1. When Claude Code finishes a task, it writes the entry with `Done:` filled and the other three sections as placeholders:
 
 ### v2_ideas.md
 If the user mentions an idea that is interesting but out of scope for the 4-week plan, suggest adding it to `v2_ideas.md` (one line per idea, dated). Do not silently expand scope.
