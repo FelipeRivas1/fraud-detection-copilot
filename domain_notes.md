@@ -95,4 +95,5 @@
 - Porque usarla -> El feature_importance de LightGBM te da resultado globales (ej, cuantas veces se uso el feature en el split). En Fraude se quiere ver xq cada transaccion fue flageada para luego poder ver si rechazar o no.
 
 
+
 ## Open questions

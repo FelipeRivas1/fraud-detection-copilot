@@ -72,6 +72,13 @@ def add_uid2(df: pd.DataFrame) -> pd.DataFrame:
     return df.assign(uid2=uid2)
 
 
+def run(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    """Apply all uid transformations: add_uid1 then add_uid2."""
+    df = add_uid1(df)
+    df = add_uid2(df)
+    return df
+
+
 # ── diagnostics ───────────────────────────────────────────────────────────────
 
 def uid_diagnostics(df: pd.DataFrame, uid_col: str) -> None:

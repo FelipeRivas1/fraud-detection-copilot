@@ -82,6 +82,11 @@ def add_all_time_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def run(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    """Apply all time transformations."""
+    return add_all_time_features(df)
+
+
 # ── diagnostics ───────────────────────────────────────────────────────────────
 
 def time_diagnostics(df: pd.DataFrame) -> None:
