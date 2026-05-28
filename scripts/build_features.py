@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.data import load_data
-from src.features import encoding, split, uid
+from src.features import aggregations, encoding, split, uid
 from src.features import time as time_features
 from src.features import velocity
 
@@ -72,8 +72,13 @@ def main() -> None:
     df = encoding.run(df)
     _done(t0, df.shape)
 
-    # ── Step 7: Save ──────────────────────────────────────────────────────────
-    t0 = _step(7, f"Save → {OUTPUT_PATH}")
+    # ── Step 7: Static aggregations ───────────────────────────────────────────
+    t0 = _step(7, "Static aggregations (uid2 count/mean/std + ratio/zscore)")
+    df = aggregations.run(df)
+    _done(t0, df.shape)
+
+    # ── Step 8: Save ──────────────────────────────────────────────────────────
+    t0 = _step(8, f"Save → {OUTPUT_PATH}")
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(OUTPUT_PATH, index=False)
     size_mb = OUTPUT_PATH.stat().st_size / 1_048_576

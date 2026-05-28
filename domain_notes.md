@@ -94,6 +94,6 @@
 - Ej, una transaccion flageada 0.92, SHAP te dice card1 +0.4, card2 +0.10, ...., eso deberia sumar 0.92
 - Porque usarla -> El feature_importance de LightGBM te da resultado globales (ej, cuantas veces se uso el feature en el split). En Fraude se quiere ver xq cada transaccion fue flageada para luego poder ver si rechazar o no.
 
-
+* Lift ->  cuántas veces más (o menos) frecuente es algo en un subgrupo comparado con la población general.
 
 ## Open questions

@@ -165,3 +165,29 @@ Open questions / Notes:
 Next:
 - Static aggregations per uid2 (mean/std amt, count, ratio current vs uid average). Last feature family before baseline.
 - After that: baseline LightGBM with default params, PR-AUC + P@top-K + recall@precision metrics on val.
+
+---
+
+## 2026-05-26 - Session 9: Static aggregations + feature validation
+
+Done:
+- Created `src/features/aggregations.py` with fit_uid_aggregations, save_aggregations, load_aggregations, transform_uid_aggregations, run, aggregations_diagnostics. Same fit/save/load/transform/run pattern as encoding.py.
+- 5 new features on uid2: count_uid2, mean_amt_uid2, std_amt_uid2, amt_ratio_to_uid2_mean, amt_zscore_uid2. Aggregations fit on train only, looked up on val/test (UIDs unseen in train → NaN).
+- Safe division verified: ratio/zscore are NaN (not inf) when denominator is 0 or NaN, via .where() masks plus a belt-and-suspenders inf→NaN replace.
+- Persisted to models/encoders/uid2_aggregations.json.
+- Added Step 7 to scripts/build_features.py (aggregations, 2.5s). Pipeline now 8 steps, 19.6s total, final shape 590,540 × 460 cols, 102 MB.
+- Created notebooks/02_feature_validation.ipynb for pre-modeling feature signal checks.
+- Validated aggregation signal via lift analysis (notebook 02).
+
+Decisions:
+- Aggregations on uid2 (not uid1): uid2 is the more precise identifier; uid1 already carries velocity. Static aggregations need precision over density.
+- Aggregations use fit-on-train / lookup-everywhere (option B), NOT per-row expanding windows (option A). Reasons: consistent with frequency encoding, matches how production user-profile stats are precomputed and refreshed, cheaper and more predictable. Documented in module docstring.
+- Kept all 5 aggregation features despite inverted/weak univariate signal (see below). Removing features before seeing model-level importance (SHAP) is premature; univariate lift misses interactions. LightGBM and SHAP will decide.
+
+Open questions / Notes:
+- [HYPOTHESIS-VALIDATED] amt_ratio_to_uid2_mean and amt_zscore_uid2 have lift < 1 against fraud, consistently: amt_ratio>3 → 0.69x, amt_ratio>10 → 0.35x, |zscore|>3 → 0.67x, |zscore|>5 → 0.71x. "Out-of-pattern" transactions are LESS fraudulent than average, not more. Reason: deviation features require an established uid history (mean_amt_uid2 must exist). One-shot CNP fraud has no prior history — those uids have count=1, mean=NaN, and are excluded from the ratio filter. The rows that remain in "out-of-pattern" are established (legitimate) users making an occasional large purchase. This INVERTS the account-takeover intuition the features were built on.
+- This is the SECOND independent piece of evidence (after velocity's ~0 correlation in Session 5) that IEEE-CIS fraud is predominantly one-shot CNP without prior uid history, not card-testing bursts or account takeover. The earlier [VALIDATE-IN-BASELINE] hypothesis is now considered validated by two independent routes BEFORE training.
+- Implication for modeling: the highest-importance features will likely be self-contained transaction attributes (TransactionAmt, ProductCD, Vesta's C/D/V columns, card1 frequency, identity columns) rather than history-based features (velocity, aggregations). To be confirmed with SHAP. This is a genuine analytical finding worth putting in the README — it shows the dataset was understood, not just fed to a model.
+
+Next:
+- Baseline LightGBM: define feature set (exclude isFraud, TransactionID, TransactionDT, day_index, raw uid strings), default params, no imbalance handling. Metrics on val: PR-AUC, P@top-1%, P@top-5%, recall@precision. Inspect feature importance and confirm the one-shot hypothesis via SHAP later.
