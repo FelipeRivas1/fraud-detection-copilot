@@ -1,11 +1,9 @@
-Sobrescribí el archivo CLAUDE.md en la raíz del proyecto con el siguiente contenido exacto:
-
 # Fraud Detection Copilot - Project Context
 
 ## Project Overview
 End-to-end fraud detection system targeting fraud/risk roles at LATAM fintechs (Mercado Pago, Ualá, dLocal, Naranja X). Built as a portfolio project to demonstrate production-style ML work.
 
-**Status**: Week 1 of 4 (setup + EDA)
+**Status**: Week 2 of 4 (feature engineering done, starting baseline model)
 
 ## Tech Stack
 - Python 3.11+ with uv for package management
@@ -20,22 +18,24 @@ End-to-end fraud detection system targeting fraud/risk roles at LATAM fintechs (
 ## Project Structure
 - `data/raw/` — Original IEEE-CIS CSVs (gitignored, regenerable from Kaggle)
 - `data/processed/` — Parquet versions (gitignored)
-- `notebooks/` — Exploration only (EDA, experiments). Numbered: 01_eda, 02_features, etc.
+- `notebooks/` — Exploration only (EDA, experiments). Numbered: 01_eda, 02_feature_validation, etc.
+- `scripts/` — Orchestration scripts (e.g., build_features.py runs the full feature pipeline)
 - `src/` — Production code, importable as modules
   - `src/data/` — Data loading and conversion
-  - `src/features/` — Feature engineering (velocity, aggregations)
+  - `src/features/` — Feature engineering (uid, time, velocity, split, encoding, aggregations)
   - `src/models/` — Model training and evaluation
   - `src/api/` — FastAPI app
   - `src/dashboard/` — Streamlit app
   - `src/llm/` — Claude-powered explainer agent
 - `models/` — Trained model artifacts (.pkl, gitignored)
+- `models/encoders/` — Serialized feature-engineering artifacts (frequency encoders, uid aggregations) as JSON, used at serving time
 - `tests/` — Unit tests
 - `domain_notes.md` — User's learning notes on fintech/payments domain (CRITICAL: do not modify without explicit user request — see "Protected Files" section below)
 - `v2_ideas.md` — Out-of-scope ideas parked for v2
 - `PROGRESS.md` — Session-by-session log of work done, decisions made, and next steps (see "Session Workflow" section below)
 
 ## Working Principles
-1. **Pedagogical mode**: For every non-trivial technical decision, briefly explain (a) what it is, (b) why we chose it over the obvious alternatives, (c) when the alternative would be better. The user is learning the domain from scratch and wants to defend each decision in an interview. Skip the explanation only for trivial preferences.
+1. **Pedagogical mode**: For every non-trivial technical decision, briefly explain (a) what it is, (b) why we chose it over the obvious alternatives, (c) when the alternative would be better, (d) how it connects to the Fraud Data Scientist role. The user is learning the domain and wants to defend each decision in an interview. Skip the explanation only for trivial preferences.
 2. **No deep learning for tabular fraud**. LightGBM is the right tool. Do not suggest neural nets unless explicitly asked.
 3. **Metrics**: precision-recall, AUC-PR, precision@K, expected cost. NEVER report ROC-AUC as the primary metric — it's misleading at ~3.5% fraud rate.
 4. **Temporal split, not random**. Future data must not leak into training.
@@ -73,6 +73,9 @@ Even in this mode, never auto-execute scripts that modify files outside the imme
 - If the user's prompt is a full spec of a deliverable with definitions, constraints, and entregables listed (like a ticket) → ask once: "¿lo construyo end-to-end o vamos pieza por pieza?". Default to step-by-step if no answer.
 - If the user asks a conceptual question ("¿por qué X?", "¿qué es Y?") → answer first, do not write code until asked.
 
+### File creation convention
+The USER creates files (the chat tells them the name, location, and initial content). Claude Code then EDITS existing files. One file at a time — if a task needs a module plus its tests, that's two separate prompts. Claude Code never runs scripts or tests; it writes code and tells the user what to run.
+
 ### Anti-pattern to avoid
 Do NOT generate a large module, immediately run it, show the output, and ask "¿seguimos?". By that point the user has lost the chance to intervene at each decision. Pause earlier.
 
@@ -97,18 +100,14 @@ Open questions / Notes:
 Next:
 - bullet list of what to tackle in the next session
 
-## PROGRESS.md Updates — Division of Labor
-
+### PROGRESS.md Updates — Division of Labor
 At the end of each task, PROGRESS.md gets a new entry. Two parties contribute:
 
-**Claude Code writes the `Done:` block.**
-Lists files created/modified, functions added, scripts executed, outputs generated, artifacts saved. Mechanical, factual, code-level detail. Claude Code knows this best because it executed the work.
+**Claude Code writes the `Done:` block.** Files created/modified, functions added, scripts executed, outputs generated, artifacts saved. Mechanical, factual, code-level detail.
 
-**The chat (Felipe + Claude) writes `Decisions:`, `Open questions / Notes:`, `Next:`.**
-This is where the *why* lives: criterion behind technical choices, trade-offs considered, caveats, what was deferred to v2_ideas.md, what the next step is and why. Claude Code did not participate in this discussion and cannot reconstruct it reliably.
+**The chat (Felipe + Claude) writes `Decisions:`, `Open questions / Notes:`, `Next:`.** The *why*: criterion behind choices, trade-offs, caveats, what was deferred, what's next and why. Claude Code did not participate in that discussion and cannot reconstruct it reliably.
 
-**Workflow:**
-1. When Claude Code finishes a task, it writes the entry with `Done:` filled and the other three sections as placeholders:
+Workflow: when Claude Code finishes a task, it writes the entry with `Done:` filled and the other three sections as `<pending: chat>` placeholders. The user pastes it into the chat; the chat fills in the three pending sections. The user commits the merged entry.
 
 ### v2_ideas.md
 If the user mentions an idea that is interesting but out of scope for the 4-week plan, suggest adding it to `v2_ideas.md` (one line per idea, dated). Do not silently expand scope.
@@ -116,7 +115,7 @@ If the user mentions an idea that is interesting but out of scope for the 4-week
 ## User Profile
 - Felipe Rivas, final-year student at UTDT (Buenos Aires).
 - Background: Python, SQL, ML supervised/unsupervised, deep learning with PyTorch.
-- Domain knowledge of payments/fintech at project start: essentially zero. Learning in parallel via Fase 0 ramp-up with ChatGPT.
+- Domain knowledge of payments/fintech: solid foundation built during the project (anatomy of a payment, who earns money, transaction types, chargebacks, fraud taxonomy). KYC/AML deferred to post-project.
 - Wants brutally honest, direct feedback. No flattery. No filler. No "great question!".
 - Prefers Spanish for conversation, but technical terms in English (industry standard).
 - Will spend ~10 hours/week on this for 4 weeks.
@@ -137,4 +136,16 @@ If the user mentions an idea that is interesting but out of scope for the 4-week
 - **MDR**: Merchant Discount Rate; what the merchant pays to process a card transaction.
 
 ## Current Phase
-Week 2: Feature engineering and baseline model. EDA from Week 1 completed and committed (notebooks/01_eda.ipynb). Currently building feature engineering modules in src/features/ (starting with synthetic UIDs for grouping transactions by user proxy, then velocity features and aggregations). After features are ready, will train LightGBM baseline with temporal split, then iterate with class imbalance handling and cost-based threshold tuning.
+Week 2: Baseline model. Feature engineering is COMPLETE. The full pipeline runs via `scripts/build_features.py` (~20s, one command) producing `data/processed/train_transaction_features.parquet` (590,540 rows × 460 cols).
+
+Feature modules in `src/features/`, each exposing a pure `run(df) -> df` function plus individual `add_*`/fit/transform functions (so they're reusable in the API for single-transaction scoring without parquet round-trips):
+- `uid.py`: two synthetic UIDs (uid1 = card1+addr1, dense, base for velocity; uid2 = card1+addr1+card-birthday via D1, precise, base for aggregations).
+- `time.py`: hour, day_of_week, day_index (helper, NOT a feature — temporal leak).
+- `velocity.py`: per-uid1 rolling windows (1h/24h: count, sum, mean amt, distinct ProductCD) + time_since_last. Strict past-only look-back, 6 passing tests.
+- `split.py`: temporal 70/15/15 by TransactionDT (train 413k, val 88k, test 88k). Tests passing.
+- `encoding.py`: frequency encoding of 6 high-cardinality categoricals (card1, card2, addr1, P_emaildomain, R_emaildomain, DeviceInfo). Fit on train, unseen → NaN. Artifacts in models/encoders/frequency_encoders.json.
+- `aggregations.py`: per-uid2 count/mean/std amt + amt_ratio_to_uid2_mean + amt_zscore_uid2. Fit on train. Artifacts in models/encoders/uid2_aggregations.json.
+
+KEY ANALYTICAL FINDING (validated two independent ways before training): fraud in IEEE-CIS is predominantly one-shot CNP with no prior uid history. Velocity correlates ~0 with isFraud; deviation features (amt_ratio, amt_zscore) have lift < 1 (amt_ratio>10 → 0.35x). "Out-of-pattern" flags established legitimate users, not fraudsters, because one-shot fraud has no prior pattern to deviate from. Implication: highest-importance features will likely be self-contained transaction attributes (TransactionAmt, ProductCD, Vesta C/D/V columns, card1_freq, identity), not history-based ones. To confirm with SHAP.
+
+NEXT: baseline LightGBM (feature selection, low-cardinality categoricals as native categorical_feature, no imbalance handling initially, metrics = PR-AUC + precision@K + recall@precision on val), then cost-based threshold tuning, then SHAP.
