@@ -1,0 +1,62 @@
+{
+  "DeviceType": [
+    "desktop",
+    "mobile"
+  ],
+  "M1": [
+    "F",
+    "T"
+  ],
+  "M2": [
+    "F",
+    "T"
+  ],
+  "M3": [
+    "F",
+    "T"
+  ],
+  "M4": [
+    "M0",
+    "M1",
+    "M2"
+  ],
+  "M5": [
+    "F",
+    "T"
+  ],
+  "M6": [
+    "F",
+    "T"
+  ],
+  "M7": [
+    "F",
+    "T"
+  ],
+  "M8": [
+    "F",
+    "T"
+  ],
+  "M9": [
+    "F",
+    "T"
+  ],
+  "ProductCD": [
+    "C",
+    "H",
+    "R",
+    "S",
+    "W"
+  ],
+  "card4": [
+    "american express",
+    "discover",
+    "mastercard",
+    "visa"
+  ],
+  "card6": [
+    "charge card",
+    "credit",
+    "debit",
+    "debit or credit"
+  ]
+}

@@ -191,3 +191,28 @@ Open questions / Notes:
 
 Next:
 - Baseline LightGBM: define feature set (exclude isFraud, TransactionID, TransactionDT, day_index, raw uid strings), default params, no imbalance handling. Metrics on val: PR-AUC, P@top-1%, P@top-5%, recall@precision. Inspect feature importance and confirm the one-shot hypothesis via SHAP later.
+
+---
+
+## 2026-06-01 - Session 10: Baseline model setup (dataset.py + evaluate.py + train_baseline.py)
+
+Done:
+- Created `src/models/dataset.py`: constants `CATEGORICAL_COLS` (13 cols) and `EXCLUDED_COLS` (11 cols); `fit_categorical_mappings` (freezes sorted str categories → JSON); `apply_categorical_mappings` (pd.Categorical con lista fija, notna() mask para no coercionar NaN→"nan"); `load_features` (carga parquet, error accionable si no existe); `split_xy` (valida split/isFraud/mappings, construye X/y por split, aplica mappings, retorna 6 arrays + CATEGORICAL_COLS).
+- Created `src/models/evaluate.py`: `pr_auc` (average_precision_score); `precision_at_k` (argsort top-K, clampea a len); `recall_at_precision` (precision_recall_curve, excluye endpoint extra de sklearn, elige menor threshold que cumple piso); `evaluate_all` (dict JSON-serializable con pr_auc, P@K, recall@precision, n_samples, base_rate).
+- Created `scripts/train_baseline.py`: 7 steps orquestados (load → fit mappings → split_xy → lgb.train → predict → evaluate_all → save). Params baseline sin scale_pos_weight/is_unbalance, early stopping 50 rounds. Artefactos: `models/baseline_lgbm.pkl` y `models/baseline_metrics.json`.
+
+Decisions:
+- Native categorical en LightGBM para low-card (ProductCD, card4, card6, M1-M9, DeviceType) con mappings congelados en JSON. One-hot descartado (peor para árboles con cardinalidad >2). Frequency encoding sigue solo para high-card.
+- Fit y apply separados en dataset.py. Razón: en serving la API solo aplica; flags booleanos son cuna de bugs. Mismo patrón que encoding.py / aggregations.py.
+- Drift check de columnas D: ninguna con KS > 0.2. Las que muestran envejecimiento (D15, D11, D10, D1) se dejan en baseline y se vigilan en SHAP. Sin flags D_i_is_null porque el null rate también drifta y encodearía "fila temprana".
+- Baseline LightGBM SIN scale_pos_weight ni is_unbalance. Punto de referencia limpio para atribuir mejoras después a features vs reweighting vs threshold.
+- Hiperparámetros conservadores y no tuneados a propósito: lr=0.05 + early stopping, num_leaves=63 (no max_depth, LightGBM crece leaf-wise), min_data_in_leaf=100, fractions=0.8.
+- Métricas: PR-AUC primaria + P@K (100/500/1000/5000) + recall@precision (0.5/0.7/0.9). ROC-AUC descartado. Todas viven en evaluate.py como funciones puras reusables.
+
+Open questions / Notes:
+- Esperar que el baseline dé PR-AUC más baja que kernels de Kaggle (que usan random split). Eso es correcto, no fracaso — temporal split es más honesto. Punto a explicar en el README.
+- id_30, id_31, id_33 (identity messy de cardinalidad media) quedaron afuera del baseline. Si SHAP muestra que las identity numéricas pesan, evaluar frequency-encode de las messy en v2.
+- addr2 (~98% un solo valor) queda como numérica cruda. Si rankea bajo en SHAP, drop en v2.
+- Las D que muestran time-drift (D15, D11, D10, D1) están bajo observación en SHAP.
+
+Next:
