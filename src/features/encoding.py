@@ -102,7 +102,10 @@ def transform_frequency_encoders(
     return df.assign(**new_cols)
 
 
-_DEFAULT_COLS = ["card1", "card2", "addr1", "P_emaildomain", "R_emaildomain", "DeviceInfo"]
+_DEFAULT_COLS = [
+    "card1", "card2", "addr1", "P_emaildomain", "R_emaildomain", "DeviceInfo",
+    "id_30", "id_31", "id_33",
+]
 _DEFAULT_ENC_PATH = Path(__file__).parents[2] / "models" / "encoders" / "frequency_encoders.json"
 
 
@@ -185,7 +188,7 @@ if __name__ == "__main__":
     src_path = PROC_DIR / "train_transaction_features.parquet"
     enc_path = MODELS_DIR / "frequency_encoders.json"
 
-    COLS_TO_ENCODE = ["card1", "card2", "addr1", "P_emaildomain", "R_emaildomain", "DeviceInfo"]
+    COLS_TO_ENCODE = _DEFAULT_COLS
 
     print(f"Loading {src_path} ...")
     df = pd.read_parquet(src_path)

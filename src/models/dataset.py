@@ -21,18 +21,23 @@ import pandas as pd
 # ── constants ─────────────────────────────────────────────────────────────────
 
 CATEGORICAL_COLS: list[str] = [
+    # transaction categoricals (low-cardinality, native LightGBM categorical)
     "ProductCD",
     "card4",
     "card6",
     "M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9",
     "DeviceType",
+    # identity categoricals (≤4 unique values each, from train_identity post-merge)
+    "id_12", "id_15", "id_16", "id_23",
+    "id_27", "id_28", "id_29",
+    "id_34", "id_35", "id_36", "id_37", "id_38",
 ]
 """Low-cardinality columns passed to LightGBM as native categoricals.
 
 These are label-encoded via pd.Categorical with frozen category lists so that
 integer codes are reproducible across training splits and single-row serving calls.
-High-cardinality columns (card1, card2, addr1, emaildomains, DeviceInfo) are handled
-separately via frequency encoding in src/features/encoding.py.
+High-cardinality columns (card1, card2, addr1, emaildomains, DeviceInfo, id_30,
+id_31, id_33) are handled separately via frequency encoding in src/features/encoding.py.
 """
 
 EXCLUDED_COLS: list[str] = [
@@ -56,11 +61,18 @@ EXCLUDED_COLS: list[str] = [
     "P_emaildomain",
     "R_emaildomain",
     "DeviceInfo",
+    "id_30",   # superseded by id_30_freq (OS + version, 75 categories)
+    "id_31",   # superseded by id_31_freq (browser + version, 130 categories)
+    "id_33",   # superseded by id_33_freq (screen resolution, 260 categories)
+    # aggregation keys — signal already captured in derived features
+    "uid1",    # key for velocity features (vel_*_uid1); string itself is not a feature
+    "uid2",    # key for uid2 aggregations (*_uid2); string itself is not a feature
 ]
 """Columns dropped before building the feature matrix X.
 
 Covers: identifiers, raw event time (temporal-split leak), split/target metadata,
-and raw high-cardinality strings replaced by frequency-encoded numerics.
+raw high-cardinality strings replaced by frequency-encoded numerics, and UID
+aggregation keys whose signal is fully captured in derived velocity/aggregation columns.
 """
 
 

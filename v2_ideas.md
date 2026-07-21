@@ -1,0 +1,1 @@
+- Hacer un modelo de regresion logistica simple, para lluego compararlo con el final, y cuanto beneficio obtuvimos por el ferature engeneering y cuanto por complejizar el modelo (Hacer LightGBM vs reg logistica)
