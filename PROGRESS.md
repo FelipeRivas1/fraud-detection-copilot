@@ -215,4 +215,31 @@ Open questions / Notes:
 - addr2 (~98% un solo valor) queda como numérica cruda. Si rankea bajo en SHAP, drop en v2.
 - Las D que muestran time-drift (D15, D11, D10, D1) están bajo observación en SHAP.
 
+---
+
+## 2026-07-21 - Session 11: Column bug fix (id_* + uid) + imbalance experiment
+
+Done:
+- Created `notebooks/03_dataset_sanity.ipynb` and `notebooks/04_evaluate_sanity.ipynb`: sanity checks on `dataset.py` and `evaluate.py`. The object-dtype column audit in notebook 04 found `id_12`–`id_38`, `uid1`, `uid2` reaching the feature matrix as raw object columns — absent from both `CATEGORICAL_COLS` and `EXCLUDED_COLS`.
+- Fixed `src/models/dataset.py`: added 12 identity columns (`id_12, id_15, id_16, id_23, id_27, id_28, id_29, id_34, id_35, id_36, id_37, id_38`) to `CATEGORICAL_COLS`; added `id_30, id_31, id_33, uid1, uid2` to `EXCLUDED_COLS`.
+- Fixed `src/features/encoding.py`: added `id_30, id_31, id_33` to `_DEFAULT_COLS` for frequency encoding.
+- Created `scripts/experiment_imbalance.py`: same pipeline as `train_baseline.py`, `PARAMS` + `is_unbalance=True` only, prints Vanilla/Imbalance/Δ table vs `baseline_metrics.json`.
+- Ran it: regenerated `models/encoders/categorical_mappings.json`; produced `models/imbalance_lgbm.pkl` and `models/imbalance_metrics.json`. Verified via `feature_name()` that it trained on the identical 447-column feature set as `baseline_lgbm.pkl` — apples-to-apples comparison.
+- Added one line to `v2_ideas.md` (logistic regression baseline for comparison).
+- Confirmed (via shell, reading the parquet/pkl directly): `train_transaction_features.parquet` and `baseline_lgbm.pkl`/`baseline_metrics.json` already reflect the column fix — the code change existed locally uncommitted since Jun 2 and was only committed to git today, no data regeneration was needed this session.
+- Note: `notebooks/03_dataset_sanity.ipynb`'s cached cell outputs (df.shape=460 cols, "13 categorical cols") are stale — predate the fix and don't match current code/data (463 cols, 25 categorical). Notebook was not rerun after the final fix.
+
+Decisions:
+- Bug descubierto al entrenar: 17 columnas string (12 id_* low-card, 3 id_* mid-card, uid1/uid2) nunca fueron procesadas por el pipeline. Fix: id_30/31/33 → frequency encoding (mismo módulo que las otras 6); las 12 id_* restantes → native categorical; uid1/uid2 → drop (ya capturadas en velocity/aggregations).
+- Vanilla re-entrenado post-fix: PR-AUC val=0.615, test=0.537. Gap val-test interpretado como distribution shift temporal esperable, no bug.
+- Experimento is_unbalance=True descartado: PR-AUC val bajó a 0.605 y las probabilidades se descalibraron. Confirma hipótesis pre-registrada (reweighting no aporta a 3.5% con boosting). El vanilla sigue siendo el modelo que avanza.
+
+Open questions / Notes:
+- Agregar a v2_ideas.md: contratos de schema entre etapas (pandera/great_expectations) — este bug es el caso concreto que lo justifica.
+- Modelo no convergió del todo en 913 iteraciones; no se toca ahora, queda anotado para cuando se tuneen hiperparámetros.
+- Gap val-test y resultado negativo de is_unbalance son hallazgos a documentar en el README, no a esconder.
+
 Next:
+- Threshold tuning por costo esperado (Semana 3).
+- SHAP global + waterfall por transacción. Confirmar hipótesis de Semana 2.
+- Vigilar en SHAP si columnas D con drift o alguna id_* dominan sin razón ligada a fraude.
