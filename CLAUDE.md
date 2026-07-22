@@ -74,7 +74,7 @@ Even in this mode, never auto-execute scripts that modify files outside the imme
 - If the user asks a conceptual question ("¿por qué X?", "¿qué es Y?") → answer first, do not write code until asked.
 
 ### File creation convention
-The USER creates files (the chat tells them the name, location, and initial content). Claude Code then EDITS existing files. One file at a time — if a task needs a module plus its tests, that's two separate prompts. Claude Code never runs scripts or tests; it writes code and tells the user what to run.
+The USER creates files (the chat tells them the name, location, and initial content). Claude Code then EDITS existing files. One file at a time — if a task needs a module plus its tests, that's two separate prompts. Claude Code may run scripts and tests directly to verify its own work. Exception: flag before any run that overwrites an existing trained model artifact or regenerates the full processed dataset — don't run those silently.
 
 ### Anti-pattern to avoid
 Do NOT generate a large module, immediately run it, show the output, and ask "¿seguimos?". By that point the user has lost the chance to intervene at each decision. Pause earlier.
